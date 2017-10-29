@@ -9010,17 +9010,55 @@ var _user$project$Main$decodeGifUrl = A2(
 		}
 	},
 	_elm_lang$core$Json_Decode$string);
-var _user$project$Main$subscriptions = function (model) {
-	return _elm_lang$core$Platform_Sub$none;
-};
-var _user$project$Main$Model = F2(
-	function (a, b) {
-		return {topic: a, gifUrl: b};
+var _user$project$Main$Model = F4(
+	function (a, b, c, d) {
+		return {topic: a, gifUrl: b, status: c, paused: d};
 	});
-var _user$project$Main$init = {
-	ctor: '_Tuple2',
-	_0: A2(_user$project$Main$Model, 'puppies', 'waiting.gif'),
-	_1: _elm_lang$core$Platform_Cmd$none
+var _user$project$Main$Start = {ctor: 'Start'};
+var _user$project$Main$Stop = {ctor: 'Stop'};
+var _user$project$Main$pauseButton = function (model) {
+	var _p0 = model.paused;
+	if (_p0 === true) {
+		return A2(
+			_elm_lang$html$Html$div,
+			{ctor: '[]'},
+			{
+				ctor: '::',
+				_0: A2(
+					_elm_lang$html$Html$button,
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html_Events$onClick(_user$project$Main$Start),
+						_1: {ctor: '[]'}
+					},
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html$text('start'),
+						_1: {ctor: '[]'}
+					}),
+				_1: {ctor: '[]'}
+			});
+	} else {
+		return A2(
+			_elm_lang$html$Html$div,
+			{ctor: '[]'},
+			{
+				ctor: '::',
+				_0: A2(
+					_elm_lang$html$Html$button,
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html_Events$onClick(_user$project$Main$Stop),
+						_1: {ctor: '[]'}
+					},
+					{
+						ctor: '::',
+						_0: _elm_lang$html$Html$text('stop'),
+						_1: {ctor: '[]'}
+					}),
+				_1: {ctor: '[]'}
+			});
+	}
 };
 var _user$project$Main$NewTopic = function (a) {
 	return {ctor: 'NewTopic', _0: a};
@@ -9033,16 +9071,21 @@ var _user$project$Main$getRandomGif = function (topic) {
 	var request = A2(_elm_lang$http$Http$get, url, _user$project$Main$decodeGifUrl);
 	return A2(_elm_lang$http$Http$send, _user$project$Main$NewGif, request);
 };
+var _user$project$Main$init = {
+	ctor: '_Tuple2',
+	_0: A4(_user$project$Main$Model, 'puppies', '', ':)', false),
+	_1: _user$project$Main$getRandomGif('puppies')
+};
 var _user$project$Main$update = F2(
 	function (msg, model) {
-		var _p0 = msg;
-		switch (_p0.ctor) {
+		var _p1 = msg;
+		switch (_p1.ctor) {
 			case 'MorePlease':
 				return {
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{gifUrl: ''}),
+						{gifUrl: 'https://i.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.webp', status: ':3'}),
 					_1: _user$project$Main$getRandomGif(model.topic)
 				};
 			case 'NewTopic':
@@ -9050,23 +9093,64 @@ var _user$project$Main$update = F2(
 					ctor: '_Tuple2',
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
-						{topic: _p0._0}),
+						{topic: _p1._0, status: ':O'}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
-			default:
-				if (_p0._0.ctor === 'Ok') {
+			case 'NewGif':
+				if (_p1._0.ctor === 'Ok') {
 					return {
 						ctor: '_Tuple2',
 						_0: _elm_lang$core$Native_Utils.update(
 							model,
-							{gifUrl: _p0._0._0}),
+							{gifUrl: _p1._0._0, status: ':)'}),
 						_1: _elm_lang$core$Platform_Cmd$none
 					};
 				} else {
-					return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
+					return {
+						ctor: '_Tuple2',
+						_0: _elm_lang$core$Native_Utils.update(
+							model,
+							{status: '>:('}),
+						_1: _elm_lang$core$Platform_Cmd$none
+					};
 				}
+			case 'MorePleaseTick':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{gifUrl: 'https://i.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.webp', status: ':3'}),
+					_1: _user$project$Main$getRandomGif(model.topic)
+				};
+			case 'Stop':
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{paused: true}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
+			default:
+				return {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.update(
+						model,
+						{paused: false}),
+					_1: _elm_lang$core$Platform_Cmd$none
+				};
 		}
 	});
+var _user$project$Main$MorePleaseTick = function (a) {
+	return {ctor: 'MorePleaseTick', _0: a};
+};
+var _user$project$Main$subscriptions = function (model) {
+	var _p2 = model.paused;
+	if (_p2 === true) {
+		return _elm_lang$core$Platform_Sub$none;
+	} else {
+		return A2(_elm_lang$core$Time$every, _elm_lang$core$Time$second * 10, _user$project$Main$MorePleaseTick);
+	}
+};
 var _user$project$Main$MorePlease = {ctor: 'MorePlease'};
 var _user$project$Main$view = function (model) {
 	return A2(
@@ -9122,7 +9206,22 @@ var _user$project$Main$view = function (model) {
 									_0: _elm_lang$html$Html$text('more plz'),
 									_1: {ctor: '[]'}
 								}),
-							_1: {ctor: '[]'}
+							_1: {
+								ctor: '::',
+								_0: A2(
+									_elm_lang$html$Html$div,
+									{ctor: '[]'},
+									{
+										ctor: '::',
+										_0: _elm_lang$html$Html$text(model.status),
+										_1: {ctor: '[]'}
+									}),
+								_1: {
+									ctor: '::',
+									_0: _user$project$Main$pauseButton(model),
+									_1: {ctor: '[]'}
+								}
+							}
 						}
 					}
 				}

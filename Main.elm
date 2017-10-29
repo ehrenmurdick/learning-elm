@@ -1,10 +1,11 @@
 module Main exposing (..)
 
 import Html exposing (..)
-import Html.Events exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Http
 import Json.Decode as Decode
+import Time exposing (Time, second)
 
 
 main =
@@ -19,39 +20,63 @@ main =
 type alias Model =
     { topic : String
     , gifUrl : String
+    , status : String
+    , paused : Bool
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model "puppies" "waiting.gif", Cmd.none )
+    ( Model "puppies" "" ":)" False, getRandomGif "puppies" )
 
 
 type Msg
     = MorePlease
+    | MorePleaseTick Time
     | NewGif (Result Http.Error String)
     | NewTopic String
+    | Stop
+    | Start
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    case model.paused of
+        True ->
+            Sub.none
+
+        False ->
+            Time.every (second * 10) MorePleaseTick
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         MorePlease ->
-            ( { model | gifUrl = "" }, getRandomGif model.topic )
+            ( { model
+                | gifUrl = "https://i.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.webp"
+                , status = ":3"
+              }
+            , getRandomGif model.topic
+            )
 
         NewTopic s ->
-            ( { model | topic = s }, Cmd.none )
+            ( { model | topic = s, status = ":O" }, Cmd.none )
 
         NewGif (Ok newUrl) ->
-            ( { model | gifUrl = newUrl }, Cmd.none )
+            ( { model | gifUrl = newUrl, status = ":)" }, Cmd.none )
 
-        NewGif (Err _) ->
-            ( model, Cmd.none )
+        NewGif (Err m) ->
+            ( { model | status = ">:(" }, Cmd.none )
+
+        MorePleaseTick t ->
+            ( { model | gifUrl = "https://i.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.webp", status = ":3" }, getRandomGif model.topic )
+
+        Stop ->
+            ( { model | paused = True }, Cmd.none )
+
+        Start ->
+            ( { model | paused = False }, Cmd.none )
 
 
 getRandomGif : String -> Cmd Msg
@@ -79,4 +104,20 @@ view model =
         , hr [] []
         , input [ onInput NewTopic ] []
         , button [ onClick MorePlease ] [ text "more plz" ]
+        , div [] [ text model.status ]
+        , pauseButton model
         ]
+
+
+pauseButton : Model -> Html Msg
+pauseButton model =
+    case model.paused of
+        True ->
+            div []
+                [ button [ onClick Start ] [ text "start" ]
+                ]
+
+        False ->
+            div []
+                [ button [ onClick Stop ] [ text "stop" ]
+                ]
