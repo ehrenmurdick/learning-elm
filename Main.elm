@@ -2,40 +2,81 @@ module Main exposing (..)
 
 import Html exposing (..)
 import Html.Events exposing (..)
+import Html.Attributes exposing (..)
+import Http
+import Json.Decode as Decode
 
 
 main =
-    Html.beginnerProgram { model = model, view = view, update = update }
+    Html.program
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
+        }
 
 
 type alias Model =
-    Int
+    { topic : String
+    , gifUrl : String
+    }
 
 
-model : Model
-model =
-    0
+init : ( Model, Cmd Msg )
+init =
+    ( Model "puppies" "waiting.gif", Cmd.none )
 
 
 type Msg
-    = Increment
-    | Decrement
+    = MorePlease
+    | NewGif (Result Http.Error String)
+    | NewTopic String
 
 
-update : Msg -> Model -> Model
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.none
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Increment ->
-            model + 1
+        MorePlease ->
+            ( { model | gifUrl = "" }, getRandomGif model.topic )
 
-        Decrement ->
-            model - 1
+        NewTopic s ->
+            ( { model | topic = s }, Cmd.none )
+
+        NewGif (Ok newUrl) ->
+            ( { model | gifUrl = newUrl }, Cmd.none )
+
+        NewGif (Err _) ->
+            ( model, Cmd.none )
+
+
+getRandomGif : String -> Cmd Msg
+getRandomGif topic =
+    let
+        url =
+            "https://api.giphy.com/v1/gifs/random?api_key=dc6zaTOxFJmzC&tag=" ++ topic
+
+        request =
+            Http.get url decodeGifUrl
+    in
+        Http.send NewGif request
+
+
+decodeGifUrl : Decode.Decoder String
+decodeGifUrl =
+    Decode.at [ "data", "image_url" ] Decode.string
 
 
 view : Model -> Html Msg
 view model =
     div []
-        [ button [ onClick Decrement ] [ text "-" ]
-        , div [] [ text (toString model) ]
-        , button [ onClick Increment ] [ text "+" ]
+        [ h2 [] [ text model.topic ]
+        , img [ src model.gifUrl ] []
+        , hr [] []
+        , input [ onInput NewTopic ] []
+        , button [ onClick MorePlease ] [ text "more plz" ]
         ]
